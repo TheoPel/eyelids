@@ -1,0 +1,54 @@
+#PART I
+
+from maya import cmds, OpenMaya
+
+# create a locator named "center" in the middle of the eye
+
+center = "center"
+vtx = cmds.ls(sl = 1, fl = 1)
+
+for v in vtx :
+    cmds.select(cl = 1 )
+    jnt = cmds.joint()
+    pos = cmds.xform ( v, q = 1, ws = 1 , t =1 )
+    cmds.xform ( jnt, ws = 1, t = pos )
+    posC = cmds.xform ( center , q = 1 , ws = 1 , t = 1 )
+    cmds.select ( cl = 1 )
+    jntC = cmds.joint()
+    cmds.xform ( jntC , ws = 1, t = posC)
+    cmds.parent ( jnt, jntC)
+    cmds.joint ( jntC, e=1 , oj = "xyz", secondaryAxisOrient = 'yup', ch = 1, zso = 1)
+
+# PART II
+
+
+# create a locator on the top of the eye and named it "L_eyeUpVec_LOC"
+
+sel = cmds.ls(sl = 1)
+
+for s in sel :
+    loc = cmds.spaceLocator() [0]
+    pos = cmds.xform ( s, q=1, ws = 1, t= 1)
+    cmds.xform( loc, ws= 1, t= pos)
+    par = cmds.listRelatives (s , p = 1 ) [0]
+    
+    cmds.aimConstraint(loc, par, mo = 1, weight = 1 , aimVector = (1 , 0 ,0), upVector = ( 1, 0 , 0), worldUpType = "object", worldUpObject = "L_eyeUpVec_LOC")
+
+# PART III
+
+from maya import cmds as mc
+
+sel = mc.ls(sl=1)
+crv = 'L_downLidHigh_CRV'
+for loc in sel:
+
+    npc = mc.createNode('nearestPointOnCurve',n=loc.replace('loc','npc'))
+    mc.connectAttr(crv+'.worldSpace',npc+'.inputCurve')
+    mc.connectAttr(loc+'.t',npc+'.inPosition')
+    u = mc.getAttr(npc+'.parameter')
+    mc.delete(npc)
+    pci = mc.createNode('pointOnCurveInfo',n=loc.replace('loc','pci'))
+    mc.connectAttr(crv+'.worldSpace',pci+'.inputCurve')
+    mc.connectAttr(pci+'.position',loc+'.t')
+    mc.setAttr(pci+'.parameter',u)
+
